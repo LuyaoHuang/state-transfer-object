@@ -4,11 +4,11 @@ TMP : for testing
 from object import StateTransferObject, NEW, DONE
 from scheduler import ThreadScheduler
 from exceptions import NoObjectInterrupt
+from db_session import Session
 import config
 
 import logging
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 _log = logging.getLogger(__name__)
 
@@ -29,8 +29,14 @@ class DefaultEntry(object):
         sto_cls.metadata.create_all(self._engine)
 
     def _init_db(self):
-        self._engine = create_engine(config.DB_URL, connect_args={'check_same_thread': False})
-        self._session = sessionmaker(bind=self._engine)()
+        if config.DB_URL.startswith("sqlite"):
+            # XXX: or reject use ThreadScheduler ?
+            self._engine = create_engine(config.DB_URL,
+                                         connect_args={'check_same_thread': False})
+        else:
+            self._engine = create_engine(config.DB_URL)
+        Session.create_session(self._engine)
+        self._session = Session.get_session()
         StateTransferObject.metadata.create_all(self._engine)
 
     def register_obj(self, obj):
@@ -83,4 +89,9 @@ if __name__ == '__main__':
     sto_1 = StateTransferObject(state=NEW)
     test_entry = DefaultEntry()
     test_entry.next(new_objs=[sto_1])
-    test_entry.next()
+    try:
+        test_entry.next()
+    except NoObjectInterrupt:
+        _log.info('Cool !')
+    else:
+        _log.error('WTF ?')

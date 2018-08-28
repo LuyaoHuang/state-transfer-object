@@ -11,3 +11,8 @@ class InvalidStatusError(Exception):
 class NoObjectInterrupt(Exception):
     """ TODO
     """
+
+
+class SessionNotInitError(Exception):
+    """ TODO
+    """
