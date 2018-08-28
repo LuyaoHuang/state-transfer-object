@@ -1,7 +1,7 @@
 """
 State Transfer Object
 """
-from state import State, StateManager
+from .state import State, StateManager
 from sqlalchemy import Column, Integer, String, ARRAY
 from sqlalchemy.ext.declarative import declarative_base
 

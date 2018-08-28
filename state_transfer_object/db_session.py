@@ -3,7 +3,7 @@ Shared database session
 """
 
 from sqlalchemy.orm import sessionmaker
-from exceptions import SessionNotInitError
+from .exceptions import SessionNotInitError
 
 
 class Session(object):

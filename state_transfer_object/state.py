@@ -1,7 +1,7 @@
 """
 State of object
 """
-from exceptions import InvalidStatusError
+from .exceptions import InvalidStatusError
 
 from sqlalchemy import Column, String, Integer, DateTime
 from sqlalchemy.ext.declarative import declarative_base

@@ -1,11 +1,11 @@
 """
 TMP : for testing
 """
-from object import StateTransferObject, NEW, DONE
-from scheduler import ThreadScheduler
-from exceptions import NoObjectInterrupt
-from db_session import Session
-import config
+from .object import StateTransferObject, NEW, DONE
+from .scheduler import ThreadScheduler
+from .exceptions import NoObjectInterrupt
+from .db_session import Session
+from . import config
 
 import logging
 from sqlalchemy import create_engine
