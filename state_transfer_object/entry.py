@@ -14,6 +14,9 @@ _log = logging.getLogger(__name__)
 
 
 class DefaultEntry(object):
+    """ This is a noncontinuous call entry
+        it require call next() method to trigger next iteration
+    """
     def __init__(self):
         self._engine = None
         self._session = None
@@ -56,18 +59,7 @@ class DefaultEntry(object):
         for obj in self._session.new:
             yield obj, True
 
-    def next(self, new_objs=None, ignore_obj=False):
-        if new_objs:
-            for obj in new_objs:
-                self.register_obj(obj)
-            self.db_commit()
-
-        if not self._objs:
-            raise NoObjectInterrupt('Need obj for next iterate')
-
-        self._scheduler.new_task(self._objs)
-        self._scheduler.wait_all_task()
-
+    def _check_state_transfer(self, ignore_obj):
         for obj, new_one in self.db_check_update():
             if new_one:
                 if obj.__class__ not in self._support_sto:
@@ -81,17 +73,17 @@ class DefaultEntry(object):
                 _log.info('%s have finished it lifecycle', obj)
                 self.deregister_obj(obj)
 
+    def next(self, new_objs=None, ignore_obj=False):
+        if new_objs:
+            for obj in new_objs:
+                self.register_obj(obj)
+            self.db_commit()
+
+        if not self._objs:
+            raise NoObjectInterrupt('Need obj for next iterate')
+
+        self._scheduler.new_task(self._objs)
+        self._scheduler.wait_all_task()
+        self._check_state_transfer(ignore_obj)
+
         self.db_commit()
-
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-    sto_1 = StateTransferObject(state=NEW)
-    test_entry = DefaultEntry()
-    test_entry.next(new_objs=[sto_1])
-    try:
-        test_entry.next()
-    except NoObjectInterrupt:
-        _log.info('Cool !')
-    else:
-        _log.error('WTF ?')
