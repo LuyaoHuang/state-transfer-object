@@ -16,3 +16,8 @@ class NoObjectInterrupt(Exception):
 class SessionNotInitError(Exception):
     """ TODO
     """
+
+
+class NotSupportedError(Exception):
+    """ TODO
+    """

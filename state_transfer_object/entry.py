@@ -3,12 +3,12 @@ TMP : for testing
 """
 from .object import StateTransferObject, NEW, DONE
 from .scheduler import ThreadScheduler
-from .exceptions import NoObjectInterrupt
+from .exceptions import NoObjectInterrupt, NotSupportedError
 from .db_session import Session
 from . import config
 
 import logging
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 
 _log = logging.getLogger(__name__)
 
@@ -87,3 +87,25 @@ class DefaultEntry(object):
         self._check_state_transfer(ignore_obj)
 
         self.db_commit()
+
+
+class ContEntry(DefaultEntry):
+    def run(self, objs):
+        pass
+
+    def stop(self):
+        pass
+
+    def next(self):
+        raise NotSupportedError('Cannot use next method in a continuous entry')
+
+    def _register_event(self):
+        for sto_cls in self._support_sto:
+            event.listen(sto_cls, 'init', self._obj_init_callback)
+            event.listen(sto_cls.state, 'set', self._obj_state_callback)
+
+    def _obj_init_callback(self, target, args, kwargs):
+        _log.error('init %s %s %s', target, args, kwargs)
+
+    def _obj_state_callback(self, target, value, oldvalue, initiator):
+        _log.error('set %s %s %s %s', target, value, oldvalue, initiator)

@@ -13,7 +13,6 @@ if os.path.isdir(os.path.join(BASEDIR, 'state_transfer_object')):
     sys.path.insert(0, BASEDIR)
 
 from state_transfer_object.entry import DefaultEntry
-from state_transfer_object.event import event
 from state_transfer_object.object import StateTransferObject, NEW, DONE
 from state_transfer_object.exceptions import NoObjectInterrupt
 
