@@ -38,3 +38,6 @@ class StateTransferObject(Base):
         _log.info('iterate: %s state: %s', self, self.state)
         if self.state == NEW:
             self.transfer_state(DONE)
+
+    def __repr__(self):
+        return '<%s at %s state %s>' % (self.__class__.__name__, hex(id(self)), self.state)
