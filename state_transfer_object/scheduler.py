@@ -2,6 +2,9 @@
 State Transfer Object Scheduler
 """
 import threading
+import logging
+
+_log = logging.getLogger(__name__)
 
 
 class BaseScheduler(object):
@@ -19,6 +22,7 @@ class ThreadScheduler(BaseScheduler):
 
     def new_task(self, objs):
         for obj in objs:
+            _log.info('Create a new task for %s', obj)
             t = threading.Thread(target=self._run_task, args=(obj,))
             self._tasks.append(obj)
             self._thread_pool.append(t)

@@ -38,7 +38,7 @@ class DefaultEntry(object):
                                          connect_args={'check_same_thread': False})
         else:
             self._engine = create_engine(config.DB_URL)
-        Session.create_session(self._engine)
+        Session.create_session(self._engine, autocommit=False)
         self._session = Session.get_session()
         StateTransferObject.metadata.create_all(self._engine)
 
@@ -46,9 +46,10 @@ class DefaultEntry(object):
         self._objs.add(obj)
         self._session.add(obj)
 
-    def deregister_obj(self, obj):
+    def deregister_obj(self, obj, db_rm=False):
         self._objs.remove(obj)
-        self._session.delete(obj)
+        if db_rm:
+            self._session.delete(obj)
 
     def db_commit(self):
         self._session.commit()
@@ -77,7 +78,7 @@ class DefaultEntry(object):
         if new_objs:
             for obj in new_objs:
                 self.register_obj(obj)
-            self.db_commit()
+        self.db_commit()
 
         if not self._objs:
             raise NoObjectInterrupt('Need obj for next iterate')
@@ -85,16 +86,38 @@ class DefaultEntry(object):
         self._scheduler.new_task(self._objs)
         self._scheduler.wait_all_task()
         self._check_state_transfer(ignore_obj)
-
         self.db_commit()
 
 
 class ContEntry(DefaultEntry):
-    def run(self, objs):
-        pass
+    def _init_db(self):
+        if config.DB_URL.startswith("sqlite"):
+            # XXX: or reject use ThreadScheduler ?
+            self._engine = create_engine(config.DB_URL,
+                                         connect_args={'check_same_thread': False})
+        else:
+            self._engine = create_engine(config.DB_URL)
+        Session.create_session(self._engine)
+        self._session = Session.get_session()
+        StateTransferObject.metadata.create_all(self._engine)
 
-    def stop(self):
-        pass
+    def start(self, objs):
+        if not objs:
+            raise NoObjectInterrupt('Need obj for next iterate')
+
+        for obj in objs:
+            self.register_obj(obj)
+
+        self._register_event()
+
+        self._scheduler.new_task(objs)
+
+    def wait(self):
+        self._scheduler.wait_all_task()
+        if self._objs:
+            _log.warning('Some objs not finished: %s', self._objs)
+
+        self._deregister_event()
 
     def next(self):
         raise NotSupportedError('Cannot use next method in a continuous entry')
@@ -104,8 +127,22 @@ class ContEntry(DefaultEntry):
             event.listen(sto_cls, 'init', self._obj_init_callback)
             event.listen(sto_cls.state, 'set', self._obj_state_callback)
 
+    def _deregister_event(self):
+        for sto_cls in self._support_sto:
+            event.remove(sto_cls, 'init', self._obj_init_callback)
+            event.remove(sto_cls.state, 'set', self._obj_state_callback)
+
     def _obj_init_callback(self, target, args, kwargs):
-        _log.error('init %s %s %s', target, args, kwargs)
+        _log.info('new obj init %s %s %s', target, args, kwargs)
 
     def _obj_state_callback(self, target, value, oldvalue, initiator):
-        _log.error('set %s %s %s %s', target, value, oldvalue, initiator)
+        _log.info('%s state change %s -> %s', target, oldvalue, value)
+        if value == DONE:
+            _log.info('%s have finished it lifecycle', target)
+            self.deregister_obj(target)
+        elif value == NEW:
+            self._objs.add(target)
+            self._scheduler.new_task([target])
+        else:
+            # TODO
+            pass

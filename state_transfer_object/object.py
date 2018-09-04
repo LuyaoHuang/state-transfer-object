@@ -4,6 +4,9 @@ State Transfer Object
 from .state import State, StateManager
 from sqlalchemy import Column, Integer, String, ARRAY
 from sqlalchemy.ext.declarative import declarative_base
+import logging
+
+_log = logging.getLogger(__name__)
 
 Base = declarative_base()
 
@@ -32,6 +35,6 @@ class StateTransferObject(Base):
     def iterate(self):
         """ This is a example, Override this method
         """
+        _log.info('iterate: %s state: %s', self, self.state)
         if self.state == NEW:
             self.transfer_state(DONE)
-        return

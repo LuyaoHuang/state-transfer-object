@@ -10,8 +10,8 @@ class Session(object):
     _session = None
 
     @classmethod
-    def create_session(cls, engine):
-        cls._session = sessionmaker(bind=engine)()
+    def create_session(cls, engine, autocommit=True):
+        cls._session = sessionmaker(bind=engine)(autocommit=autocommit)
 
     @classmethod
     def get_session(cls):
