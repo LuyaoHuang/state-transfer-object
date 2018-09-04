@@ -1,7 +1,6 @@
 import pytest
 
 from state_transfer_object.entry import DefaultEntry, ContEntry
-from state_transfer_object.db_session import Session
 from state_transfer_object.object import StateTransferObject, NEW, DONE
 from state_transfer_object.exceptions import NoObjectInterrupt
 

@@ -14,7 +14,6 @@ if os.path.isdir(os.path.join(BASEDIR, 'state_transfer_object')):
     sys.path.insert(0, BASEDIR)
 
 from state_transfer_object.entry import ContEntry
-from state_transfer_object.db_session import Session
 from state_transfer_object.object import StateTransferObject, NEW, DONE
 
 _log = logging.getLogger(__name__)
@@ -25,7 +24,6 @@ class CustomObject(StateTransferObject):
         if self.state == NEW:
             _log.info('Create a new obj')
             tmp = StateTransferObject(state=NEW)
-            Session.add_obj(tmp)
             self.transfer_state(DONE)
         else:
             raise Exception('Unsupported state: %s' % self.state)
